@@ -7,10 +7,11 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane fx:id="borderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
+<BorderPane fx:id="borderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
    <top>
       <VBox fx:id="vbox" BorderPane.alignment="CENTER">
          <children>
@@ -21,7 +22,8 @@
                <children>
                   <Button fx:id="backBtn" mnemonicParsing="false" onAction="#goBack" text="Back" />
                   <TextField fx:id="addressBar" HBox.hgrow="ALWAYS" />
-                  <Button mnemonicParsing="false" text="Search" />
+                  <TextField fx:id="searchField" />
+                  <Button fx:id="searchBtn" contentDisplay="GRAPHIC_ONLY" mnemonicParsing="false" text="Search" />
                </children>
             </HBox>
             <Label fx:id="pathError" alignment="CENTER" text="Could not find the path specified" textFill="#ff3535">
@@ -44,6 +46,9 @@
    <center>
    </center>
    <center>
-      <ScrollPane fx:id="scrollPane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" maxWidth="1.7976931348623157E308" vbarPolicy="ALWAYS" BorderPane.alignment="CENTER" />
+      <ScrollPane fx:id="scrollPane" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" maxWidth="1.7976931348623157E308" vbarPolicy="ALWAYS" BorderPane.alignment="CENTER">
+         <content>
+            <StackPane fx:id="stackPane" prefHeight="150.0" prefWidth="200.0" />
+         </content></ScrollPane>
    </center>
 </BorderPane>

@@ -1,15 +1,13 @@
 package sample;
 
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.Initializable;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -17,7 +15,6 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
@@ -31,8 +28,9 @@ import java.util.Stack;
 
 public class Controller implements Initializable {
 
-    private static final String basePath = "/home/";
+    public static final String basePath = "/home/";
     private static final int itemPerRow = 4;
+    private static boolean isShowListView = false;
 
     public Stack<Node> nodes;
     public Stack<String> paths;
@@ -45,7 +43,9 @@ public class Controller implements Initializable {
     public TextField addressBar;
     public BorderPane borderPane;
     public ScrollPane scrollPane;
+    public StackPane stackPane;
     public Button backBtn;
+    public Button searchBtn;
 
     public void click() {
         System.out.println("Clicked");
@@ -59,9 +59,26 @@ public class Controller implements Initializable {
 
         initGridPane();
 
+        ListView listView = new ListView();
+        listView.getItems().add("Item 1");
+        listView.getItems().add("Item 2");
+        listView.getItems().add("Item 3");
+
+        searchBtn.setOnAction(searchBtnClick());
+
+        ImageView image = new ImageView(getClass().getResource("assets/icons/search.png").toString());
+        image.setFitHeight(16);
+        image.setFitWidth(16);
+        searchBtn.setGraphic(image);
+
         pathError.setVisible(false);
         addressBar.addEventHandler(KeyEvent.KEY_PRESSED, goToPath());
-        scrollPane.setContent(gridPane);
+
+        stackPane.getChildren().add(listView);
+        stackPane.getChildren().get(0).setVisible(false);
+        stackPane.getChildren().add(gridPane);
+
+        scrollPane.setContent(stackPane);
         borderPane.setCenter(scrollPane);
 
         nodes = new Stack<>();
@@ -84,20 +101,6 @@ public class Controller implements Initializable {
         gridPane.setPadding(new Insets(10, 10, 10, 10));
         gridPane.gridLinesVisibleProperty().setValue(true);
         setColumnConstrains();
-    }
-
-    public EventHandler<MouseEvent> clickLabel() {
-        return event -> {
-            if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
-                String directoryName = ((Label)event.getSource()).getText();
-                try {
-                    traverse(Paths.get(paths.peek() , directoryName));
-                    showDirectories();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
     }
 
     public void createLabel(Path file) {
@@ -133,6 +136,10 @@ public class Controller implements Initializable {
     }
 
     public void showDirectories() {
+
+        if (isShowListView) {
+            hideListView();
+        }
 
         int numRow = (int) Math.ceil(nodes.size() / 4.0);
         for (int row = 0; row < numRow ; row++) {
@@ -181,21 +188,6 @@ public class Controller implements Initializable {
         return Paths.get(path.getParent().toString(), path.getFileName().toString()).toString();
     }
 
-    public EventHandler<KeyEvent> goToPath() {
-        return event -> {
-            if (event.getCode() == KeyCode.ENTER) {
-                try {
-                    traverse(Paths.get(addressBar.getText()));
-                    showDirectories();
-                } catch (FileNotFoundException e) {
-                    showPathNotFoundError();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-    }
-
     private void showPathNotFoundError() {
         pathError.setVisible(true);
         clearLayout();
@@ -214,6 +206,60 @@ public class Controller implements Initializable {
             e.printStackTrace();
         }
 
+    }
+
+    public void showListView() {
+        isShowListView  = true;
+        switchLayout();
+    }
+
+    public void hideListView() {
+        isShowListView = false;
+        switchLayout();
+    }
+
+    public void switchLayout() {
+        stackPane.getChildren().get(0).setVisible(isShowListView);
+        stackPane.getChildren().get(1).setVisible(!isShowListView);
+    }
+
+    /*--- Events ---*/
+
+    public EventHandler<ActionEvent> searchBtnClick() {
+        return event -> {
+            if (!isShowListView) {
+                showListView();
+            }
+        };
+    }
+
+    public EventHandler<MouseEvent> clickLabel() {
+        return event -> {
+            if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
+                String directoryName = ((Label)event.getSource()).getText();
+                try {
+                    traverse(Paths.get(paths.peek() , directoryName));
+                    showDirectories();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+    }
+
+    public EventHandler<KeyEvent> goToPath() {
+        return event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                try {
+                    traverse(Paths.get(addressBar.getText()));
+                    showDirectories();
+                } catch (FileNotFoundException e) {
+                    showPathNotFoundError();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
     }
 
 }
