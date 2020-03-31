@@ -1,8 +1,12 @@
 package sample;
 
-import java.nio.file.Path;
+import org.apache.lucene.document.Document;
 
-public class FileUtils {
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Utils {
     public static String getExtensionIcon(Path fileName) {
 
         String iconPath = "";
@@ -75,5 +79,15 @@ public class FileUtils {
         }
 
         return iconPath;
+    }
+
+    public static List<DocumentModel> mapDocument(List<Document> results) {
+        List<DocumentModel> list = new ArrayList<>();
+        for (Document doc : results) {
+            list.add(new DocumentModel(doc.get("filename"), doc.get("path")));
+        }
+
+        return list;
+
     }
 }

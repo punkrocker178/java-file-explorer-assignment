@@ -5,6 +5,17 @@ This is a simple javafx project about File explorer with search functionality of
 - Implement Lucene index & search functions
 - Enhance UI
 - Open file
+- Create / Remove / Rename folders
+- Apply multithreading or async task for lucene indexing
+
+## Program Flow:
+1. When first started, user is prompted to choose where to store index files for lucene to run
+2. After selected the directory, that directory will be the base path of the application. Lucene starts indexing the base path.
+3. After Lucene done indexing you can type some content then click the search button
+4. Results will show file name and file location
+
 
 ## References: 
+- https://stackoverflow.com/questions/16176701/switch-between-panes-in-javafx
 - https://www.baeldung.com/lucene-file-search
+- https://lucene.apache.org/core/8_5_0/demo/overview-summary.html#overview.description

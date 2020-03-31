@@ -27,36 +27,29 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class LuceneIndex {
+public class LuceneController {
 
-    public static final String indexPath = "/home/osboxes/Desktop/index";
-    public static final String basePath = "/home/osboxes/Desktop/NNLT";
+    private String indexPath;
 
-    public static void main(String[] args) {
+    private Analyzer analyzer;
+    private IndexWriterConfig indexWriterConfig;
+    private IndexWriter indexWriter;
 
+    public LuceneController(String indexPath) {
+        this.indexPath = indexPath;
+        analyzer = new StandardAnalyzer();
         try {
             Directory dir = FSDirectory.open(Paths.get(indexPath));
-            StandardAnalyzer analyzer = new StandardAnalyzer();
-
-            IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
+            indexWriterConfig = new IndexWriterConfig(analyzer);
             indexWriterConfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
-            IndexWriter indexWriter = new IndexWriter(
-                    dir, indexWriterConfig);
+            indexWriter = new IndexWriter(dir, indexWriterConfig);
+        } catch (IOException ignored) {
 
-            indexWriter.commit();
-            indexDocs(indexWriter, basePath);
-
-            indexWriter.close();
-
-            System.out.println(Arrays.toString(searchFiles("contents", "tc2", analyzer).toArray()));
-
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-
     }
 
-    public static void addFileToIndex(IndexWriter writer, Path path) throws IOException {
+
+    public void addFileToIndex(Path path) throws IOException {
 
         File file = path.toFile();
 
@@ -70,21 +63,21 @@ public class LuceneIndex {
         document.add(
                 new StringField("filename", file.getName(), Field.Store.YES));
 
-        if (writer.getConfig().getOpenMode() == IndexWriterConfig.OpenMode.CREATE) {
+        if (indexWriter.getConfig().getOpenMode() == IndexWriterConfig.OpenMode.CREATE) {
             // New index, so we just add the document (no old document can be there):
             System.out.println("adding " + file);
-            writer.addDocument(document);
+            indexWriter.addDocument(document);
         }
     }
 
-    public static void indexDocs(IndexWriter writer, String filePath) throws IOException {
+    public void indexDocs(String filePath) throws IOException {
         Path path = Paths.get(filePath);
         if (Files.isDirectory(path)) {
             Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     try {
-                        addFileToIndex(writer, file);
+                        addFileToIndex(file);
                     } catch (IOException ignore) {
                         // don't index files that can't be read.
                     }
@@ -92,18 +85,18 @@ public class LuceneIndex {
                 }
             });
         } else {
-            addFileToIndex(writer, path);
+            addFileToIndex(path);
         }
     }
 
-    public static List<Document> searchFiles(String inField, String queryString , StandardAnalyzer analyzer) {
+    public List<Document> searchFiles(String inField, String queryString) {
         try {
+            indexWriter.close();
             Query query = new QueryParser(inField, analyzer).parse(queryString);
             Directory  indexDirectory = FSDirectory.open(Paths.get(indexPath));
 
             IndexReader indexReader = DirectoryReader.open(indexDirectory);
             IndexSearcher searcher = new IndexSearcher(indexReader);
-
 
             TopDocs topDocs = searcher.search(query, 10);
             return Arrays.stream(topDocs.scoreDocs).map(scoreDoc -> {
