@@ -5,7 +5,7 @@ This is a simple javafx project about File explorer with search functionality of
 - JDK11
 - [JavaFX 11](https://gluonhq.com/products/javafx/)
 - Add javafx module path in your project : ```--module-path C:\Users\<user>\Downloads\javafx-sdk-11\lib --add-modules=javafx.controls```
-- [Guide](https://stackoverflow.com/questions/52144931/how-to-add-javafx-runtime-to-eclipse-in-java-11)
+- [Guide](https://stackoverflow.com/questions/52144931/how-to-add-javafx-runtime-to-eclipse-in-java-11)  
 **Note:** ```module-path``` is the path to your downloaded JavaFX
 ## Upcoming work:
 - Implement Lucene index & search functions
