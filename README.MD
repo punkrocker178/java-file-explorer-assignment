@@ -19,3 +19,18 @@ This is a simple javafx project about File explorer with search functionality of
 - https://stackoverflow.com/questions/16176701/switch-between-panes-in-javafx
 - https://www.baeldung.com/lucene-file-search
 - https://lucene.apache.org/core/8_5_0/demo/overview-summary.html#overview.description
+
+
+## Demo:
+[pic1]: Screenshots/Screenshot%20from%202020-03-31%2017-33-20.png "Choose directory for index"
+[pic2]: Screenshots/Screenshot%20from%202020-03-31%2017-33-32.png "Main view"
+[pic3]: Screenshots/Screenshot%20from%202020-03-31%2017-33-49.png "Table view"
+
+Choose Index directory:  
+![alt text][pic1]
+
+File explorer view:  
+![alt text][pic2]
+
+Results from lucene index:  
+![alt text][pic3]
