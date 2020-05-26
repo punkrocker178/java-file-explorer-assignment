@@ -26,6 +26,12 @@ This is a simple javafx project about File explorer with search functionality of
 - https://www.baeldung.com/lucene-file-search
 - https://lucene.apache.org/core/8_5_0/demo/overview-summary.html#overview.description
 
+## Run:
+Open terminal and run the command accordingly (Suppose you are in the project directory) 
+- Windows:
+```java --module-path .\library\javafx-sdk-11.0.2_windows\lib --add-modules=javafx.controls,javafx.fxml -Dfile.encoding=windows-1252 -jar .\out\artifacts\java_lucene_project_jar\java_lucene_project.jar```
+- Linux:
+```java --module-path ./library/javafx-sdk-11.0.2_linux/lib --add-modules=javafx.controls,javafx.fxml -Dfile.encoding=UTF-8 -jar ./out/artifacts/java_lucene_project_jar/java_lucene_project.jar
 
 ## Demo:
 [pic1]: Screenshots/Screenshot%20from%202020-03-31%2017-33-20.png "Choose directory for index"
