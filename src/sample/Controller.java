@@ -276,7 +276,7 @@ public class Controller implements Initializable {
     public EventHandler<ActionEvent> searchBtnClick() {
         return event -> {
             clearSearchedResults();
-            results.addAll(Utils.mapDocument(lucene.searchFiles("contents", searchField.getText())));
+            results.addAll(Utils.mapDocument(lucene.searchFiles(searchField.getText())));
             tableView.getItems().addAll(results);
             if (!isShowTableView) {
                 showTableView();

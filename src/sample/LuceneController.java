@@ -10,6 +10,7 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
@@ -61,7 +62,7 @@ public class LuceneController {
         document.add(
                 new StringField("path", file.getPath(), Field.Store.YES));
         document.add(
-                new StringField("filename", file.getName(), Field.Store.YES));
+                new TextField("filename", file.getName(), Field.Store.YES));
 
         if (indexWriter.getConfig().getOpenMode() == IndexWriterConfig.OpenMode.CREATE) {
             // New index, so we just add the document (no old document can be there):
@@ -89,16 +90,17 @@ public class LuceneController {
         }
     }
 
-    public List<Document> searchFiles(String inField, String queryString) {
+    public List<Document> searchFiles(String queryString) {
         try {
             indexWriter.close();
-            Query query = new QueryParser(inField, analyzer).parse(queryString);
+//            Query query = new QueryParser(inField, analyzer).parse(queryString);
+            MultiFieldQueryParser parser = new MultiFieldQueryParser (new String[] {"filename", "contents"}, analyzer);
             Directory  indexDirectory = FSDirectory.open(Paths.get(indexPath));
 
             IndexReader indexReader = DirectoryReader.open(indexDirectory);
             IndexSearcher searcher = new IndexSearcher(indexReader);
 
-            TopDocs topDocs = searcher.search(query, 10);
+            TopDocs topDocs = searcher.search(parser.parse(queryString), 15);
             return Arrays.stream(topDocs.scoreDocs).map(scoreDoc -> {
                 try {
                     return searcher.doc(scoreDoc.doc);
