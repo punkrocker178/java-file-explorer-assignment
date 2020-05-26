@@ -100,7 +100,7 @@ public class LuceneController {
             IndexReader indexReader = DirectoryReader.open(indexDirectory);
             IndexSearcher searcher = new IndexSearcher(indexReader);
 
-            TopDocs topDocs = searcher.search(parser.parse(queryString), 15);
+            TopDocs topDocs = searcher.search(parser.parse(queryString), 50);
             return Arrays.stream(topDocs.scoreDocs).map(scoreDoc -> {
                 try {
                     return searcher.doc(scoreDoc.doc);

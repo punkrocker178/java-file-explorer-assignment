@@ -17,7 +17,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import org.apache.lucene.document.Document;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -81,6 +80,7 @@ public class Controller implements Initializable {
 
         pathError.setVisible(false);
         addressBar.addEventHandler(KeyEvent.KEY_PRESSED, goToPath());
+        searchField.addEventHandler(KeyEvent.KEY_PRESSED, searchFieldListener());
 
         stackPane.getChildren().add(tableView);
         stackPane.getChildren().get(0).setVisible(false);
@@ -271,17 +271,20 @@ public class Controller implements Initializable {
         }
     }
 
+    public void searchLucene() {
+        clearSearchedResults();
+        results.addAll(Utils.mapDocument(lucene.searchFiles(searchField.getText())));
+        tableView.getItems().addAll(results);
+        if (!isShowTableView) {
+            showTableView();
+        }
+    }
+
     /*--- Events ---*/
 
     public EventHandler<ActionEvent> searchBtnClick() {
         return event -> {
-            clearSearchedResults();
-            results.addAll(Utils.mapDocument(lucene.searchFiles(searchField.getText())));
-            tableView.getItems().addAll(results);
-            if (!isShowTableView) {
-                showTableView();
-            }
-
+            searchLucene();
         };
     }
 
@@ -311,6 +314,14 @@ public class Controller implements Initializable {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+        };
+    }
+
+    public EventHandler<KeyEvent> searchFieldListener() {
+        return event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                searchLucene();
             }
         };
     }
