@@ -7,15 +7,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Utils {
-    public static String getExtensionIcon(Path fileName) {
-
-        String iconPath = "";
+    public static String getExtensionIcon(String fileName) {
         String extension = "";
-        int i = fileName.toString().lastIndexOf('.');
-
-        if (i > 0) {
-            extension = fileName.toString().substring(i+1);
+        String iconPath = "";
+        if (fileName != null) {
+            int i = fileName.lastIndexOf('.');
+            if (i > 0) {
+                extension = fileName.substring(i+1);
+            }
         }
+
 
         switch (extension) {
             case "txt":

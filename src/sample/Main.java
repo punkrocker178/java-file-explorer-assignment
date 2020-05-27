@@ -14,6 +14,9 @@ public class Main extends Application {
         Parent root = loader.load();
         Controller controller = loader.getController();
         controller.setStage(primaryStage);
+        primaryStage.setOnCloseRequest(e -> {
+            controller.closeProgram();
+        });
         primaryStage.setTitle("File Explorer");
         primaryStage.setScene(new Scene(root, 800, 600));
         primaryStage.show();

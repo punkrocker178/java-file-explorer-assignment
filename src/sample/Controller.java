@@ -21,10 +21,7 @@ import javafx.stage.Stage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -56,8 +53,15 @@ public class Controller implements Initializable {
     public Button searchBtn;
     public DirectoryChooser dirChooser;
     public TableView<DocumentModel> tableView;
+    public MenuBar menuBar;
 
     private LuceneController lucene;
+
+    private Label selectedLabel = null;
+    private boolean labelSelected = false;
+    private int currentColumnElement;
+    private int currentRowElement;
+    private String newFolderName;
 
     public void setStage(Stage stage) {
         this.stage = stage;
@@ -78,6 +82,8 @@ public class Controller implements Initializable {
 
         initSearchBtn();
 
+        initMenuBar();
+
         pathError.setVisible(false);
         addressBar.addEventHandler(KeyEvent.KEY_PRESSED, goToPath());
         searchField.addEventHandler(KeyEvent.KEY_PRESSED, searchFieldListener());
@@ -85,6 +91,15 @@ public class Controller implements Initializable {
         stackPane.getChildren().add(tableView);
         stackPane.getChildren().get(0).setVisible(false);
         stackPane.getChildren().add(gridPane);
+
+        gridPane.setOnMouseClicked(event -> {
+            if (event.getButton().equals(MouseButton.SECONDARY) &&
+                    event.getClickCount() == 1) {
+                this.selectedLabel.setScaleX(1);
+                this.selectedLabel.setScaleY(1);
+                this.selectedLabel = null;
+            }
+        });
 
         scrollPane.setContent(stackPane);
         borderPane.setCenter(scrollPane);
@@ -101,6 +116,28 @@ public class Controller implements Initializable {
             e.printStackTrace();
         }
 
+    }
+
+    public void initMenuBar() {
+        menuBar.getMenus().remove(0, 3);
+
+        Menu fileMenu = new Menu("File");
+        Menu editMenu = new Menu("Edit");
+
+        MenuItem createFolder = new MenuItem("Create Folder");
+        MenuItem close = new MenuItem("Close");
+        MenuItem copyFile = new MenuItem("Copy");
+        MenuItem moveFile = new MenuItem("Move");
+
+        createFolder.addEventHandler(ActionEvent.ACTION, createFolderPopup());
+        close.setOnAction(e -> {
+            closeProgram();
+        });
+
+        fileMenu.getItems().addAll(createFolder, close);
+        editMenu.getItems().addAll(copyFile, moveFile);
+
+        menuBar.getMenus().addAll(fileMenu, editMenu);
     }
 
     public void initTableView() {
@@ -144,13 +181,43 @@ public class Controller implements Initializable {
         searchBtn.setGraphic(image);
     }
 
-    public void createLabel(Path file) {
-        ImageView image = new ImageView(getClass().getResource(Utils.getExtensionIcon(file.getFileName())).toString());
+    public Label createLabelUI(Path file , String defaultFileName) {
+        String fileName;
+
+        if (file != null) {
+            fileName = file.getFileName().toString();
+        } else {
+            fileName = defaultFileName;
+        }
+
+        ImageView image = new ImageView(getClass().getResource(Utils.getExtensionIcon(fileName)).toString());
         image.setFitHeight(64);
         image.setFitWidth(64);
-        Label label = new Label(file.getFileName().toString(), image);
-        label.addEventHandler(MouseEvent.MOUSE_CLICKED, clickLabel());
-        nodes.add(label);
+        Label label = new Label(fileName, image);
+
+        label.setOnMouseEntered(e -> {
+            System.out.println("hovered " + label.getText());
+            if (this.selectedLabel == null) {
+                label.setScaleX(1.1);
+                label.setScaleY(1.1);
+            }
+        });
+
+        label.setOnMouseExited(e -> {
+            System.out.println("exited " + label.getText());
+            if (this.selectedLabel == null) {
+                label.setScaleX(1);
+                label.setScaleY(1);
+            }
+        });
+
+        label.addEventHandler(MouseEvent.MOUSE_CLICKED, clickLabel(label));
+
+        return label;
+    }
+
+    public void createLabelElement(Path file) {
+        nodes.add(createLabelUI(file, ""));
     }
 
     public void setColumnConstrains() {
@@ -188,8 +255,10 @@ public class Controller implements Initializable {
             for (int col = 0; col < itemPerRow; col++) {
                 if (nodes.size() > 0) {
                     gridPane.add(nodes.pop(), col, row);
+                    currentColumnElement = col;
                 }
             }
+            currentRowElement = row;
         }
     }
 
@@ -211,7 +280,7 @@ public class Controller implements Initializable {
 
             for (Path file : stream) {
                 System.out.print(file.getFileName() + "\t");
-                createLabel(file);
+                createLabelElement(file);
             }
 
         } else {
@@ -280,7 +349,55 @@ public class Controller implements Initializable {
         }
     }
 
+    public void closeProgram() {
+        stage.close();
+    }
+
+    public void createFolderUI(String dirName) {
+        Label label = createLabelUI(null, dirName);
+
+        if (currentColumnElement == itemPerRow - 1) {
+            currentColumnElement = 0;
+            currentRowElement += 1;
+        } else {
+            currentColumnElement += 1;
+        }
+
+        gridPane.add(label, currentColumnElement, currentRowElement);
+    }
+
+    public void createFolder(int attempt) {
+        try {
+
+            String dirName = "";
+
+            if (attempt == 0) {
+                dirName = this.newFolderName;
+            } else {
+                dirName = this.newFolderName + "(" + attempt + ")";
+            }
+
+            Path dir = Paths.get(addressBar.getText() + "/" + dirName);
+
+            Files.createDirectory(dir);
+            createFolderUI(dirName);
+
+        } catch (FileAlreadyExistsException e) {
+            attempt += 1;
+            createFolder(attempt);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
     /*--- Events ---*/
+
+    public EventHandler<ActionEvent> createFolderPopup() {
+        return mouseEvent -> {
+            this.newFolderName = DialogBox.showPopup();
+            createFolder(0);
+        };
+    }
 
     public EventHandler<ActionEvent> searchBtnClick() {
         return event -> {
@@ -288,9 +405,10 @@ public class Controller implements Initializable {
         };
     }
 
-    public EventHandler<MouseEvent> clickLabel() {
+    public EventHandler<MouseEvent> clickLabel(Label label) {
         return event -> {
             if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
+                this.selectedLabel = null;
                 String directoryName = ((Label) event.getSource()).getText();
                 try {
                     traverse(Paths.get(paths.peek(), directoryName));
@@ -298,6 +416,9 @@ public class Controller implements Initializable {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            } else if ((event.getButton().equals(MouseButton.PRIMARY) || event.getButton().equals(MouseButton.SECONDARY)) &&
+                    event.getClickCount() == 1) {
+                this.selectedLabel = label;
             }
         };
     }
