@@ -58,10 +58,11 @@ public class Controller implements Initializable {
     private LuceneController lucene;
 
     private Label selectedLabel = null;
-    private boolean labelSelected = false;
+    private boolean isCopied = false;
     private int currentColumnElement;
     private int currentRowElement;
     private String newFolderName;
+    private String srcPath;
 
     public void setStage(Stage stage) {
         this.stage = stage;
@@ -127,15 +128,18 @@ public class Controller implements Initializable {
         MenuItem createFolder = new MenuItem("Create Folder");
         MenuItem close = new MenuItem("Close");
         MenuItem copyFile = new MenuItem("Copy");
-        MenuItem moveFile = new MenuItem("Move");
+        MenuItem pasteFile = new MenuItem("Patse");
+        pasteFile.setDisable(isCopied);
 
         createFolder.addEventHandler(ActionEvent.ACTION, createFolderPopup());
         close.setOnAction(e -> {
             closeProgram();
         });
 
+        copyFile.addEventHandler(ActionEvent.ACTION, copy() );
+
         fileMenu.getItems().addAll(createFolder, close);
-        editMenu.getItems().addAll(copyFile, moveFile);
+        editMenu.getItems().addAll(copyFile, pasteFile);
 
         menuBar.getMenus().addAll(fileMenu, editMenu);
     }
@@ -181,7 +185,7 @@ public class Controller implements Initializable {
         searchBtn.setGraphic(image);
     }
 
-    public Label createLabelUI(Path file , String defaultFileName) {
+    public Label createLabelUI(Path file, String defaultFileName) {
         String fileName;
 
         if (file != null) {
@@ -196,7 +200,6 @@ public class Controller implements Initializable {
         Label label = new Label(fileName, image);
 
         label.setOnMouseEntered(e -> {
-            System.out.println("hovered " + label.getText());
             if (this.selectedLabel == null) {
                 label.setScaleX(1.1);
                 label.setScaleY(1.1);
@@ -204,7 +207,6 @@ public class Controller implements Initializable {
         });
 
         label.setOnMouseExited(e -> {
-            System.out.println("exited " + label.getText());
             if (this.selectedLabel == null) {
                 label.setScaleX(1);
                 label.setScaleY(1);
@@ -390,6 +392,22 @@ public class Controller implements Initializable {
         }
     }
 
+    public void copyFileFunction(String filePath, String dir) {
+        Path sourceFile = Paths.get(filePath);
+        Path targetDir = Paths.get(dir);
+        Path targetFile = targetDir.resolve(sourceFile.getFileName());
+
+        try {
+
+            Files.copy(sourceFile, targetFile);
+
+        } catch (FileAlreadyExistsException ex) {
+            System.err.format("File %s already exists.", targetFile);
+        } catch (IOException ex) {
+            System.err.format("I/O Error when copying file");
+        }
+    }
+
     /*--- Events ---*/
 
     public EventHandler<ActionEvent> createFolderPopup() {
@@ -444,6 +462,17 @@ public class Controller implements Initializable {
             if (event.getCode() == KeyCode.ENTER) {
                 searchLucene();
             }
+        };
+    }
+
+    public EventHandler<ActionEvent> copy() {
+        return actionEvent -> {
+
+            if (selectedLabel != null) {
+                isCopied = true;
+                 srcPath = addressBar.getText() + "/" + selectedLabel.getText();
+            }
+
         };
     }
 
