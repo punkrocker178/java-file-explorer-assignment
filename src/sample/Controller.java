@@ -22,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -63,6 +64,7 @@ public class Controller implements Initializable {
     private int currentRowElement;
     private String newFolderName;
     private String srcPath;
+    private String srcName;
 
     public void setStage(Stage stage) {
         this.stage = stage;
@@ -96,9 +98,14 @@ public class Controller implements Initializable {
         gridPane.setOnMouseClicked(event -> {
             if (event.getButton().equals(MouseButton.SECONDARY) &&
                     event.getClickCount() == 1) {
-                this.selectedLabel.setScaleX(1);
-                this.selectedLabel.setScaleY(1);
-                this.selectedLabel = null;
+                if (this.selectedLabel != null) {
+                    this.selectedLabel.setScaleX(1);
+                    this.selectedLabel.setScaleY(1);
+                    this.selectedLabel = null;
+                    if (isCopied) {
+                        isCopied = false;
+                    }
+                }
             }
         });
 
@@ -127,19 +134,20 @@ public class Controller implements Initializable {
 
         MenuItem createFolder = new MenuItem("Create Folder");
         MenuItem close = new MenuItem("Close");
-        MenuItem copyFile = new MenuItem("Copy");
-        MenuItem pasteFile = new MenuItem("Patse");
-        pasteFile.setDisable(isCopied);
+        MenuItem copyFileMenu = new MenuItem("Copy");
+        MenuItem pasteFileMenu = new MenuItem("Patse");
+        pasteFileMenu.setDisable(true);
 
         createFolder.addEventHandler(ActionEvent.ACTION, createFolderPopup());
         close.setOnAction(e -> {
             closeProgram();
         });
 
-        copyFile.addEventHandler(ActionEvent.ACTION, copy() );
+        copyFileMenu.addEventHandler(ActionEvent.ACTION, copy(pasteFileMenu));
+        pasteFileMenu.addEventHandler(ActionEvent.ACTION, paste(pasteFileMenu));
 
         fileMenu.getItems().addAll(createFolder, close);
-        editMenu.getItems().addAll(copyFile, pasteFile);
+        editMenu.getItems().addAll(copyFileMenu, pasteFileMenu);
 
         menuBar.getMenus().addAll(fileMenu, editMenu);
     }
@@ -355,13 +363,13 @@ public class Controller implements Initializable {
         stage.close();
     }
 
-    public void createFolderUI(String dirName) {
-        Label label = createLabelUI(null, dirName);
+    public void createFolderItem(String itemName) {
 
+        Label label = createLabelUI(null, itemName);
         if (currentColumnElement == itemPerRow - 1) {
             currentColumnElement = 0;
             currentRowElement += 1;
-        } else {
+        } else if (currentColumnElement > 0) {
             currentColumnElement += 1;
         }
 
@@ -382,7 +390,7 @@ public class Controller implements Initializable {
             Path dir = Paths.get(addressBar.getText() + "/" + dirName);
 
             Files.createDirectory(dir);
-            createFolderUI(dirName);
+            createFolderItem(dirName);
 
         } catch (FileAlreadyExistsException e) {
             attempt += 1;
@@ -392,15 +400,63 @@ public class Controller implements Initializable {
         }
     }
 
-    public void copyFileFunction(String filePath, String dir) {
-        Path sourceFile = Paths.get(filePath);
+    public void copyFileDirectory(String srcPath, String dir) {
+        Path srcFile = Paths.get(srcPath);
         Path targetDir = Paths.get(dir);
+
+        if (Files.isDirectory(srcFile)) {
+            try {
+                Files.walkFileTree(srcFile, new SimpleFileVisitor<Path>() {
+                    private Path newDir = null;
+
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                        Path target = targetDir;
+
+                        if (newDir != null) {
+                            target = targetDir.resolve(newDir);
+                        }
+
+                        copyFileFunction(file, target);
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attributes) {
+                        try {
+
+                            if (dir.toString().equals(srcFile.toString())) {
+                                newDir = targetDir.resolve(srcName);
+                            } else {
+                                newDir = targetDir.resolve(srcFile.relativize(dir));
+                            }
+
+                            System.err.println("\nDir: " + dir.toString());
+                            System.err.println("src: " + srcFile.toString());
+                            System.err.println("target: " + targetDir.toString());
+                            System.err.println("new: " + newDir.toString());
+                            Files.createDirectory(newDir);
+                        } catch (IOException ex) {
+                            System.err.println(ex);
+                        }
+
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            copyFileFunction(srcFile, targetDir);
+        }
+
+    }
+
+
+    public void copyFileFunction(Path sourceFile, Path targetDir) {
         Path targetFile = targetDir.resolve(sourceFile.getFileName());
-
         try {
-
             Files.copy(sourceFile, targetFile);
-
         } catch (FileAlreadyExistsException ex) {
             System.err.format("File %s already exists.", targetFile);
         } catch (IOException ex) {
@@ -465,14 +521,32 @@ public class Controller implements Initializable {
         };
     }
 
-    public EventHandler<ActionEvent> copy() {
+    public EventHandler<ActionEvent> copy(MenuItem menuItem) {
         return actionEvent -> {
 
             if (selectedLabel != null) {
                 isCopied = true;
-                 srcPath = addressBar.getText() + "/" + selectedLabel.getText();
+                menuItem.setDisable(false);
+                srcPath = addressBar.getText() + "/" + selectedLabel.getText();
+                srcName = selectedLabel.getText();
             }
 
+        };
+    }
+
+    public EventHandler<ActionEvent> paste(MenuItem menuItem) {
+        return e -> {
+            if (isCopied) {
+                copyFileDirectory(srcPath, addressBar.getText());
+                isCopied = false;
+                menuItem.setDisable(true);
+                try {
+                    traverse(Paths.get(this.paths.pop()));
+                    showDirectories();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
         };
     }
 
